@@ -1,0 +1,72 @@
+{
+  "reserve_model": {
+    "algorithm": "Random Forest Regressor (300 Estimators)",
+    "features": [
+      "sentinel2_ferrous_index",
+      "sentinel2_clay_index",
+      "ndvi",
+      "land_surface_temperature",
+      "elevation_m",
+      "geological_score",
+      "ore_grade_percent"
+    ],
+    "mae": 50500.62,
+    "r2_score": 0.687,
+    "feature_importances": {
+      "sentinel2_ferrous_index": 0.0475,
+      "sentinel2_clay_index": 0.0323,
+      "ndvi": 0.0428,
+      "land_surface_temperature": 0.0275,
+      "elevation_m": 0.0283,
+      "geological_score": 0.0324,
+      "ore_grade_percent": 0.7892
+    }
+  },
+  "shortfall_model": {
+    "algorithm": "Random Forest Regressor (300 Estimators)",
+    "features": [
+      "historical_production_tonnes",
+      "equipment_efficiency",
+      "rainfall_mm",
+      "soil_moisture",
+      "geological_score",
+      "elevation_m"
+    ],
+    "mae": 544.21,
+    "r2_score": 0.2172,
+    "feature_importances": {
+      "historical_production_tonnes": 0.1556,
+      "equipment_efficiency": 0.4125,
+      "rainfall_mm": 0.1827,
+      "soil_moisture": 0.0649,
+      "geological_score": 0.0932,
+      "elevation_m": 0.0911
+    }
+  },
+  "risk_model": {
+    "algorithm": "Random Forest Classifier (300 Estimators)",
+    "features": [
+      "production_shortfall_tonnes",
+      "equipment_efficiency",
+      "rainfall_mm",
+      "soil_moisture",
+      "geological_score"
+    ],
+    "accuracy": 0.9748,
+    "classes": [
+      "High",
+      "Low",
+      "Medium"
+    ],
+    "feature_importances": {
+      "production_shortfall_tonnes": 0.1523,
+      "equipment_efficiency": 0.6759,
+      "rainfall_mm": 0.1147,
+      "soil_moisture": 0.0279,
+      "geological_score": 0.0292
+    }
+  },
+  "total_training_samples": 592,
+  "geographical_belts": 16,
+  "states_covered": 6
+}
