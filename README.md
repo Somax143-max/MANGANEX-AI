@@ -6,8 +6,8 @@
 
 ---
 
-## 🌐 Live Cloudflare Demo
-🔗 **[Live Dashboard Link](https://retirement-does-motion-invision.trycloudflare.com)**
+## 🌐 Live Web Application (Zero-Streamlit Fast Web Dashboard)
+🔗 **[https://aquatic-rides-application-pillow.trycloudflare.com](https://aquatic-rides-application-pillow.trycloudflare.com)**
 
 ---
 
@@ -20,25 +20,24 @@ India is among the world's leading producers of manganese ore, yet significant q
    - In-Situ Manganese Potential Estimation (tonnes)
    - Operational Extraction Shortfall Forecasting (tonnes)
    - Multi-Hazard Operational Risk Classification (Low / Medium / High)
-3. **5-Module Executive GIS Dashboard:** Interactive 3D PyDeck geospatial mapping over 592 verified mining clusters across Madhya Pradesh, Maharashtra, Odisha, Karnataka, Andhra Pradesh, and Jharkhand.
+3. **5-Module Executive GIS Dashboard:** Interactive 3D Leaflet & PyDeck geospatial mapping over 592 verified mining clusters across Madhya Pradesh, Maharashtra, Odisha, Karnataka, Andhra Pradesh, and Jharkhand.
 4. **Explainable AI (XAI):** Transparent mathematical breakdown of composite prospectivity scores into exact feature contributions.
 
 ---
 
 ## 🚀 Key Modules
 - **🏛️ Executive Command Center:** National supply metrics, state-wise potential vs. shortfall distribution, end-to-end pipeline flowchart, and top Tier-1 target zones.
-- **🛰️ Space Tech & Prospectivity GIS Hub:** 3D interactive PyDeck heatmap and candidate scatter points with filters for State, Min Prospectivity %, and Min Ore Grade (% Mn).
+- **🛰️ Space Tech & Prospectivity GIS Hub:** Interactive geospatial heatmap and candidate scatter points with filters for State, Min Prospectivity %, and Min Ore Grade (% Mn).
 - **📈 Production Intelligence & Shortfall Analytics:** Historical baseline vs. AI forecasted output, equipment efficiency deficit tiering, and operational risk distribution.
-- **🧪 AI Mineral Simulator & Scenario Lab:** Interactive sliders for Sentinel-2 SWIR band ratios, LST, Elevation, Geological Score, and Equipment Efficiency with real-time inference and XAI feature attribution.
+- **🧪 AI Mineral Simulator & Scenario Lab:** Interactive sliders for Sentinel-2 SWIR band ratios, LST, Elevation, Geological Score, and Equipment Efficiency with instant live inference and XAI feature attribution.
 - **🔍 Explainable AI & Space Architecture:** Mathematical formulations of satellite band ratios (B11/B12, B11/B8A), model cards with live validation metrics, and policy alignment.
 
 ---
 
 ## 🛠️ Tech Stack
-- **Core:** Python 3.10+
-- **Machine Learning:** Scikit-Learn (Random Forest Regressor / Classifier), Joblib, NumPy, Pandas
-- **Geospatial & 3D Visualization:** PyDeck (WebGL), Altair
-- **Frontend / UI:** Streamlit (Multi-Page Enterprise Dashboard)
+- **Backend:** FastAPI, Uvicorn, Python 3.10+
+- **Machine Learning:** Scikit-Learn (Random Forest Regressors & Classifiers), Joblib, NumPy, Pandas
+- **Frontend / UI:** Modern HTML5, Tailwind CSS, Leaflet.js, Chart.js, Lucide Icons
 - **Deployment / Tunneling:** Cloudflare Tunnel (`cloudflared`)
 
 ---
@@ -53,11 +52,11 @@ cd MANGANEX-AI
 # 2. Install dependencies
 pip install -r requirements.txt
 
-# 3. (Optional) Regenerate dataset and retrain models
-python src/generate_dataset.py
-python src/train_models.py
+# 3. Launch the Modern Web Dashboard (FastAPI + HTML5/Tailwind/Leaflet)
+python server.py
+# Open http://localhost:7860 in your browser!
 
-# 4. Launch the Streamlit dashboard
+# 4. Or launch the Streamlit edition (Optional)
 streamlit run dashboard/app.py
 ```
 
