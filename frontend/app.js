@@ -1,4 +1,4 @@
-// MANGANEX AI Frontend Engine
+// MANGANEX AI Frontend Engine v3.0
 let map = null;
 let mapMarkersLayer = null;
 let chartStatePot = null;
@@ -209,7 +209,7 @@ async function loadSummaryData() {
 }
 
 // -------------------------------------------------------------
-// Interactive Leaflet 3D/2D Map (Zero API Key, Zero Watermarks)
+// Interactive Leaflet Map (Guaranteed 100% Free Open Layers, Zero Watermark)
 // -------------------------------------------------------------
 function initLeafletMap() {
     map = L.map('map', {
@@ -218,32 +218,32 @@ function initLeafletMap() {
         zoomControl: true,
     });
 
-    // 1. ESRI Dark Gray Canvas (Clean Dark Theme, Zero Watermarks, 100% Free)
-    const darkCanvas = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
-        attribution: '&copy; Esri & OpenStreetMap contributors',
-        maxZoom: 16
-    });
-
-    // 2. ESRI High-Resolution World Imagery (True Satellite View for Space Tech)
-    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        attribution: '&copy; Esri, Earthstar Geographics',
-        maxZoom: 18
-    });
-
-    // 3. OpenStreetMap Standard (Clean Street View)
+    // 1. OpenStreetMap (Clean Global Open Layer - 100% Free, Zero API Key)
     const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors',
         maxZoom: 19
     });
 
-    // Set Default Base Layer to Dark Canvas
-    darkCanvas.addTo(map);
+    // 2. ESRI Dark Gray Canvas (High-contrast Dark Theme - 100% Free, Zero API Key)
+    const darkLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+        attribution: '&copy; Esri, HERE, Garmin, METI/NASA, USGS',
+        maxZoom: 16
+    });
 
-    // Layer Switcher Control on Top-Right of the Map
+    // 3. ESRI High-Resolution World Satellite Imagery (Space Observation Layer - 100% Free, Zero API Key)
+    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: '&copy; Esri, Maxar, Earthstar Geographics',
+        maxZoom: 18
+    });
+
+    // Default to ESRI Dark Gray Base for stunning dashboard appearance
+    darkLayer.addTo(map);
+
+    // Layer Switcher on Top-Right
     const baseMaps = {
-        "🌙 Dark Geospatial Map": darkCanvas,
-        "🛰️ Satellite Imagery": satelliteLayer,
-        "🗺️ Standard OpenStreetMap": osmLayer
+        "🌑 Dark Theme Map": darkLayer,
+        "🗺️ Standard OpenStreetMap": osmLayer,
+        "🛰️ Space Satellite Imagery": satelliteLayer
     };
     L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
 
@@ -276,25 +276,25 @@ async function loadGISZones() {
 
         data.zones.forEach(z => {
             const scorePct = (z.prospectivity_score * 100).toFixed(1);
-            const color = z.prospectivity_score >= 0.75 ? '#10b981' :
-                          z.prospectivity_score >= 0.50 ? '#00e5ff' : '#f59e0b';
+            const color = z.prospectivity_score >= 0.75 ? '#059669' :
+                          z.prospectivity_score >= 0.50 ? '#0284c7' : '#d97706';
 
             const marker = L.circleMarker([z.latitude, z.longitude], {
                 radius: 6,
                 fillColor: color,
                 color: '#ffffff',
-                weight: 1.2,
-                opacity: 0.95,
+                weight: 1.5,
+                opacity: 1.0,
                 fillOpacity: 0.85
             });
 
             const popupContent = `
                 <div style="font-size: 11px; line-height: 1.45; font-family: sans-serif;">
-                    <b style="color: #38bdf8; font-size: 13px;">${z.zone_id}</b> (${z.district}, ${z.state})<br/>
+                    <b style="color: #0284c7; font-size: 13px;">${z.zone_id}</b> (${z.district}, ${z.state})<br/>
                     <b>Mining Belt:</b> ${z.mining_belt}<br/>
                     <b>Formation:</b> ${z.formation}<br/>
-                    <b>Prospectivity:</b> <span style="color: #10b981; font-weight: bold;">${scorePct}%</span><br/>
-                    <b>Ore Grade:</b> <span style="color: #f59e0b; font-weight: bold;">${z.ore_grade_percent}% Mn</span><br/>
+                    <b>Prospectivity:</b> <span style="color: #059669; font-weight: bold;">${scorePct}%</span><br/>
+                    <b>Ore Grade:</b> <span style="color: #d97706; font-weight: bold;">${z.ore_grade_percent}% Mn</span><br/>
                     <b>Potential:</b> ${Math.round(z.predicted_manganese_reserve_tonnes).toLocaleString()} tonnes<br/>
                     <b>Operational Risk:</b> <b>${z.risk_level}</b>
                 </div>

@@ -5,12 +5,11 @@ from typing import Optional
 
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import pandas as pd
 
-# Add src to path
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT / "src"))
 
@@ -22,7 +21,6 @@ app = FastAPI(
     version="3.0.0",
 )
 
-# Enable CORS for all origins
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -35,7 +33,6 @@ DATA_FILE = ROOT / "data" / "synthetic" / "manganex_dataset.csv"
 FRONTEND_DIR = ROOT / "frontend"
 FRONTEND_DIR.mkdir(exist_ok=True)
 
-# Cache dataset in memory
 df_cache = None
 
 def get_df():
@@ -49,9 +46,6 @@ def get_df():
     return df_cache
 
 
-# -------------------------------------------------------------
-# Request Models
-# -------------------------------------------------------------
 class SimulationRequest(BaseModel):
     sentinel2_ferrous_index: float = 1.45
     sentinel2_clay_index: float = 1.30
@@ -65,9 +59,6 @@ class SimulationRequest(BaseModel):
     rainfall_mm: float = 1150.0
 
 
-# -------------------------------------------------------------
-# API Endpoints
-# -------------------------------------------------------------
 @app.get("/api/summary")
 def get_summary():
     df = get_df()
@@ -79,18 +70,14 @@ def get_summary():
     tier1_zones = int((df["prospectivity_score"] >= 0.75).sum())
     high_risk_zones = int((df["risk_level"] == "High").sum())
 
-    # State-wise potential
     state_pot = df.groupby("state")["predicted_manganese_reserve_tonnes"].sum().to_dict()
     state_pot_mt = {k: round(v / 1e6, 2) for k, v in state_pot.items()}
 
-    # State-wise shortfall
     state_short = df.groupby("state")["production_shortfall_tonnes"].sum().to_dict()
     state_short_kt = {k: round(v / 1e3, 1) for k, v in state_short.items()}
 
-    # Risk Distribution
     risk_counts = df["risk_level"].value_counts().to_dict()
 
-    # Efficiency Tiers
     df_copy = df.copy()
     df_copy["efficiency_tier"] = pd.cut(
         df_copy["equipment_efficiency"],
@@ -99,7 +86,6 @@ def get_summary():
     )
     tier_shortfall = df_copy.groupby("efficiency_tier", observed=False)["production_shortfall_tonnes"].sum().to_dict()
 
-    # Top 10 Tier-1 Exploration Targets
     top_targets = (
         df.sort_values(["prospectivity_score", "ore_grade_percent"], ascending=False)
         .head(10)
@@ -177,18 +163,18 @@ def get_metrics():
     return get_model_metadata()
 
 
-# Mount Static Files
+# Mount static assets
 app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
 
 
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 def serve_index():
     index_file = FRONTEND_DIR / "index.html"
     if index_file.exists():
-        return FileResponse(index_file)
-    return JSONResponse({"status": "MANGANEX AI Server Running. Frontend building..."})
+        return FileResponse(index_file, media_type="text/html")
+    return HTMLResponse("<h1>MANGANEX AI Server Running</h1>")
 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("server:app", host="0.0.0.0", port=7860, reload=True)

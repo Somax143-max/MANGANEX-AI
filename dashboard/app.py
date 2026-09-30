@@ -445,6 +445,7 @@ elif page == "🛰️ Space Tech & Prospectivity GIS":
             """,
             "style": {"color": "white"},
         },
+        map_provider="carto",
         map_style="dark",
     )
     st.pydeck_chart(deck, use_container_width=True)
