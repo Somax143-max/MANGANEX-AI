@@ -1,133 +1,82 @@
 # 🚀 MANGANEX AI — Production Deployment Guide
+## 🌐 Architecture: FastAPI Backend on Render + Modern Frontend on Vercel
 
-This repository is fully configured and ready for **1-click / zero-config deployment** across all major cloud providers and container platforms.
-
----
-
-## ⚡ Deployment Options Summary
-
-| Platform | Deployment Type | Config File | Free Tier Available |
-| :--- | :--- | :--- | :--- |
-| **Vercel** | Serverless Python (FastAPI) | [`vercel.json`](file:///d:/2nd%20move%20from%20os/d/MANGANEX_AI_SIHPOLISH/vercel.json), [`api/index.py`](file:///d:/2nd%20move%20from%20os/d/MANGANEX_AI_SIHPOLISH/api/index.py) | ✅ Yes |
-| **Render** | Docker / Native Web Service | [`render.yaml`](file:///d:/2nd%20move%20from%20os/d/MANGANEX_AI_SIHPOLISH/render.yaml), [`Procfile`](file:///d:/2nd%20move%20from%20os/d/MANGANEX_AI_SIHPOLISH/Procfile) | ✅ Yes |
-| **Railway** | Nixpacks / Docker | [`railway.json`](file:///d:/2nd%20move%20from%20os/d/MANGANEX_AI_SIHPOLISH/railway.json), [`Dockerfile`](file:///d:/2nd%20move%20from%20os/d/MANGANEX_AI_SIHPOLISH/Dockerfile) | ✅ Yes |
-| **Docker / Cloud Run / AWS / VPS** | Container (Linux Slim) | [`Dockerfile`](file:///d:/2nd%20move%20from%20os/d/MANGANEX_AI_SIHPOLISH/Dockerfile), [`docker-compose.yml`](file:///d:/2nd%20move%20from%20os/d/MANGANEX_AI_SIHPOLISH/docker-compose.yml) | ✅ Yes |
-| **Hugging Face Spaces** | Docker Space | [`Dockerfile`](file:///d:/2nd%20move%20from%20os/d/MANGANEX_AI_SIHPOLISH/Dockerfile), [`README.md`](file:///d:/2nd%20move%20from%20os/d/MANGANEX_AI_SIHPOLISH/README.md) | ✅ Yes (2vCPU / 16GB) |
-| **Streamlit Community Cloud** | Native Streamlit App | [`.streamlit/config.toml`](file:///d:/2nd%20move%20from%20os/d/MANGANEX_AI_SIHPOLISH/.streamlit/config.toml), [`dashboard/app.py`](file:///d:/2nd%20move%20from%20os/d/MANGANEX_AI_SIHPOLISH/dashboard/app.py) | ✅ Yes |
+This repository is configured for decoupled, scalable cloud deployment:
+- **Backend API & ML Models:** Hosted on **[Render](https://render.com)** (Free Python Web Service)
+- **Interactive UI Dashboard:** Hosted on **[Vercel](https://vercel.com)** (High-Speed Global Edge CDN)
 
 ---
 
-## 1. 🔺 Deploy to Vercel (Fastest Serverless Option)
+## 🏗️ Step 1: Deploy Backend to Render
 
-### Option A: Using Vercel Web Dashboard (Recommended)
-1. Push this repository to your GitHub account: `https://github.com/Somax143-max/MANGANEX-AI`
-2. Go to **[vercel.com/new](https://vercel.com/new)** and import your repository.
-3. Framework Preset: **Other** (Vercel automatically detects `vercel.json` and `api/index.py`).
-4. Click **Deploy**. Your app will be live with full SSL and global CDN in ~60 seconds!
+### 1-Click Render Blueprint Setup:
+1. Push your repository to GitHub: `git push origin main`
+2. Open **[dashboard.render.com/blueprints](https://dashboard.render.com/blueprints)** (or click **New +** → **Web Service**).
+3. Connect your repository (`MANGANEX-AI`).
+4. Render will automatically read [`render.yaml`](file:///d:/2nd%20move%20from%20os/d/MANGANEX_AI_SIHPOLISH/render.yaml):
+   - **Name:** `manganex-ai-backend`
+   - **Environment:** `Python 3`
+   - **Build Command:** `pip install -r requirements.txt`
+   - **Start Command:** `uvicorn server:app --host 0.0.0.0 --port $PORT --workers 2`
+   - **Health Check Path:** `/health`
+5. Click **Apply / Create Web Service**.
+6. Once deployed (approx 2 minutes), copy your Render backend URL:
+   > 📌 *Example:* `https://manganex-ai-backend.onrender.com`
 
-### Option B: Using Vercel CLI
-```bash
-# 1. Install Vercel CLI globally
-npm i -g vercel
+---
 
-# 2. Login & deploy to production
-vercel --prod
+## ⚡ Step 2: Deploy Frontend to Vercel
+
+### 1-Click Vercel Setup:
+1. Open **[vercel.com/new](https://vercel.com/new)**.
+2. Select and import your GitHub repository (`MANGANEX-AI`).
+3. Under **Build and Output Settings**:
+   - **Framework Preset:** `Other`
+   - **Root Directory:** `./` (or `frontend`)
+4. Click **Deploy**.
+5. Your frontend is instantly live with free SSL!
+   > 📌 *Example:* `https://manganex-ai.vercel.app`
+
+---
+
+## 🔗 Step 3: Connect Frontend (Vercel) to Backend (Render)
+
+You have **two easy ways** to connect them:
+
+### Option A: Using the Live UI Settings (Instant, Zero Re-deploy)
+1. Open your live Vercel URL in your browser.
+2. In the top navbar, click the **`⚙️ Backend: Connect`** button.
+3. Paste your Render backend URL (e.g. `https://manganex-ai-backend.onrender.com`) and click **Test & Connect**.
+4. The status turns **`🟢 Render Backend: Connected`** and data loads immediately. Your choice is saved in browser storage.
+
+### Option B: Automatic Proxy via `vercel.json` (Zero CORS)
+Add your Render URL directly into [`vercel.json`](file:///d:/2nd%20move%20from%20os/d/MANGANEX_AI_SIHPOLISH/vercel.json) rewrites:
+```json
+{
+  "rewrites": [
+    { "source": "/", "destination": "/frontend/index.html" },
+    { "source": "/app.js", "destination": "/frontend/app.js" },
+    { "source": "/static/:path*", "destination": "/frontend/:path*" },
+    { "source": "/api/:path*", "destination": "https://YOUR-RENDER-BACKEND.onrender.com/api/:path*" },
+    { "source": "/health", "destination": "https://YOUR-RENDER-BACKEND.onrender.com/health" }
+  ]
+}
 ```
 
 ---
 
-## 2. 🌊 Deploy to Render
+## 🧪 Local Testing Before Deploy
 
-### Option A: Render Blueprint (1-Click)
-1. Go to **[dashboard.render.com/blueprints](https://dashboard.render.com/blueprints)**.
-2. Connect your repo `MANGANEX-AI`.
-3. Render will read [`render.yaml`](file:///d:/2nd%20move%20from%20os/d/MANGANEX_AI_SIHPOLISH/render.yaml) and automatically configure:
-   - Build Command: `pip install -r requirements.txt`
-   - Start Command: `uvicorn server:app --host 0.0.0.0 --port $PORT`
-   - Health Check: `/health`
-4. Click **Apply**.
-
-### Option B: Render Web Service Manual Setup
-- **Environment:** Python
-- **Build Command:** `pip install -r requirements.txt`
-- **Start Command:** `uvicorn server:app --host 0.0.0.0 --port $PORT`
-- **Health Check Path:** `/health`
-
----
-
-## 3. 🚂 Deploy to Railway
-
-1. Go to **[railway.app/new](https://railway.app/new)**.
-2. Select **Deploy from GitHub repo** and select `MANGANEX-AI`.
-3. Railway automatically recognizes [`railway.json`](file:///d:/2nd%20move%20from%20os/d/MANGANEX_AI_SIHPOLISH/railway.json) or [`Dockerfile`](file:///d:/2nd%20move%20from%20os/d/MANGANEX_AI_SIHPOLISH/Dockerfile).
-4. Click **Deploy**. Generate a public domain under Settings → Networking.
-
----
-
-## 4. 🐳 Deploy with Docker / Local / Cloud Run / AWS / VPS
-
-### Run locally with Docker Compose:
 ```bash
-# Build and run container
-docker compose up --build
+# Terminal 1: Run Backend (Port 7860)
+python server.py
 
-# Open in browser
-# http://localhost:7860
-```
-
-### Build & Run Docker Image directly:
-```bash
-# Build Docker image
-docker build -t manganex-ai .
-
-# Run container
-docker run -d -p 7860:7860 --name manganex-app manganex-ai
-
-# Test health check
+# Terminal 2: Test Health Check & API
 curl http://localhost:7860/health
+curl http://localhost:7860/api/summary
 ```
-
-### Deploy to Google Cloud Run:
-```bash
-gcloud run deploy manganex-ai \
-    --source . \
-    --platform managed \
-    --region us-central1 \
-    --allow-unauthenticated \
-    --port 7860
-```
+Open `http://localhost:7860` in your browser.
 
 ---
 
-## 5. 🤗 Deploy to Hugging Face Spaces
-
-1. Create a new Space on [Hugging Face](https://huggingface.co/new-space).
-2. Space SDK: **Docker** (Blank).
-3. Push or sync this repository to the HF Space git remote:
-```bash
-git remote add space https://huggingface.co/spaces/YOUR_USERNAME/manganex-ai
-git push space main
-```
-4. HF Spaces will build the [`Dockerfile`](file:///d:/2nd%20move%20from%20os/d/MANGANEX_AI_SIHPOLISH/Dockerfile) on port `7860` and host it continuously.
-
----
-
-## 6. 🎈 Deploy Streamlit Edition (Streamlit Community Cloud)
-
-If you wish to host the optional Streamlit GIS edition alongside the FastAPI web app:
-1. Go to **[share.streamlit.io](https://share.streamlit.io)**.
-2. Select repository: `Somax143-max/MANGANEX-AI`.
-3. Main file path: `dashboard/app.py`.
-4. Python version: `3.11`.
-5. Click **Deploy**.
-
----
-
-## 🔍 Verification & Health Checks
-
-Once deployed to any URL, verify all subsystems:
-- **API Health:** `GET https://your-domain.com/health` (Returns `{"status": "healthy", ...}`)
-- **Executive Summary:** `GET https://your-domain.com/api/summary`
-- **GIS Zones Filter:** `GET https://your-domain.com/api/zones?state=Madhya%20Pradesh`
-- **Sim Inference:** `POST https://your-domain.com/api/predict`
-- **Interactive UI:** `GET https://your-domain.com/` (Full 5-module Leaflet + Chart.js Dashboard)
+### 🏛️ Ministry of Steel, Government of India • Smart India Hackathon 2026

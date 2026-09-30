@@ -1,4 +1,4 @@
-// MANGANEX AI Frontend Engine v3.0
+// MANGANEX AI Frontend Engine v4.1 (Decoupled Vercel + Render Support)
 let map = null;
 let mapMarkersLayer = null;
 let chartStatePot = null;
@@ -7,13 +7,133 @@ let chartProdComp = null;
 let chartRiskPie = null;
 let chartSimXAI = null;
 
+// =============================================================
+// API BASE URL CONFIGURATION (Supports Vercel -> Render cross-origin)
+// =============================================================
+function getApiBaseUrl() {
+    if (window.__MANGANEX_API_URL__) {
+        return window.__MANGANEX_API_URL__.replace(/\/+$/, '');
+    }
+    const saved = localStorage.getItem('MANGANEX_RENDER_API_URL');
+    if (saved) {
+        return saved.trim().replace(/\/+$/, '');
+    }
+    return ''; // Same-origin relative path fallback
+}
+
+function apiUrl(path) {
+    const base = getApiBaseUrl();
+    const cleanPath = path.startsWith('/') ? path : '/' + path;
+    return base ? `${base}${cleanPath}` : cleanPath;
+}
+
+// Update UI Badge
+function updateBackendStatusBadge(status, label) {
+    const dot = document.getElementById('backend-status-dot');
+    const text = document.getElementById('backend-status-text');
+    if (!dot || !text) return;
+
+    if (status === 'connected') {
+        dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+        text.innerText = label || 'Render Backend: Connected';
+        text.className = 'text-emerald-400 font-semibold text-xs';
+    } else if (status === 'connecting') {
+        dot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse';
+        text.innerText = label || 'Backend: Connecting...';
+        text.className = 'text-amber-400 font-semibold text-xs';
+    } else {
+        dot.className = 'w-2 h-2 rounded-full bg-rose-400';
+        text.innerText = label || 'Backend: Disconnected';
+        text.className = 'text-rose-400 font-semibold text-xs';
+    }
+}
+
+async function checkBackendHealth() {
+    updateBackendStatusBadge('connecting', 'Connecting...');
+    try {
+        const res = await fetch(apiUrl('/health'), { method: 'GET' });
+        if (res.ok) {
+            const data = await res.json();
+            const host = getApiBaseUrl() ? new URL(getApiBaseUrl()).hostname : 'Render / Local';
+            updateBackendStatusBadge('connected', `API: ${host}`);
+        } else {
+            updateBackendStatusBadge('error', 'API HTTP Error');
+        }
+    } catch (e) {
+        console.warn('Backend health check failed:', e);
+        updateBackendStatusBadge('error', 'Set Render URL');
+    }
+}
+
 // Initialize when DOM loaded
 document.addEventListener("DOMContentLoaded", () => {
-    lucide.createIcons();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+    checkBackendHealth();
     loadSummaryData();
     initSimXAIChart();
     runInference(); // Run default simulation
 });
+
+// Modal handlers for setting Render backend URL
+function openApiConfigModal() {
+    const input = document.getElementById('input-backend-url');
+    if (input) input.value = getApiBaseUrl();
+    const modal = document.getElementById('modal-api-config');
+    if (modal) modal.classList.remove('hidden');
+}
+
+function closeApiConfigModal() {
+    const modal = document.getElementById('modal-api-config');
+    if (modal) modal.classList.add('hidden');
+}
+
+async function testAndSaveBackendUrl() {
+    const input = document.getElementById('input-backend-url');
+    const resBox = document.getElementById('api-test-result');
+    const testUrl = input.value.trim().replace(/\/+$/, '');
+
+    resBox.classList.remove('hidden', 'bg-emerald-950', 'bg-rose-950', 'text-emerald-300', 'text-rose-300', 'border-emerald-700', 'border-rose-700');
+    resBox.classList.add('bg-slate-900', 'text-slate-300', 'border', 'border-slate-700');
+    resBox.innerText = 'Testing connection to ' + (testUrl || 'same-origin') + '...';
+
+    try {
+        const healthEndpoint = testUrl ? `${testUrl}/health` : '/health';
+        const res = await fetch(healthEndpoint);
+        if (res.ok) {
+            const data = await res.json();
+            resBox.classList.remove('bg-slate-900', 'text-slate-300', 'border-slate-700');
+            resBox.classList.add('bg-emerald-950/80', 'text-emerald-300', 'border', 'border-emerald-700');
+            resBox.innerText = `✅ Connected successfully! (${data.service} v${data.version})`;
+
+            if (testUrl) {
+                localStorage.setItem('MANGANEX_RENDER_API_URL', testUrl);
+            } else {
+                localStorage.removeItem('MANGANEX_RENDER_API_URL');
+            }
+
+            setTimeout(() => {
+                closeApiConfigModal();
+                checkBackendHealth();
+                loadSummaryData();
+                loadGISZones();
+                runInference();
+            }, 800);
+        } else {
+            throw new Error(`HTTP status ${res.status}`);
+        }
+    } catch (err) {
+        resBox.classList.remove('bg-slate-900', 'text-slate-300', 'border-slate-700');
+        resBox.classList.add('bg-rose-950/80', 'text-rose-300', 'border', 'border-rose-700');
+        resBox.innerText = `❌ Connection failed: ${err.message}. Please check CORS or URL.`;
+    }
+}
+
+function resetBackendUrl() {
+    localStorage.removeItem('MANGANEX_RENDER_API_URL');
+    const input = document.getElementById('input-backend-url');
+    if (input) input.value = '';
+    testAndSaveBackendUrl();
+}
 
 // Tab Navigation
 function switchTab(tabId) {
@@ -48,7 +168,7 @@ function switchTab(tabId) {
 // -------------------------------------------------------------
 async function loadSummaryData() {
     try {
-        const res = await fetch('/api/summary');
+        const res = await fetch(apiUrl('/api/summary'));
         const data = await res.json();
 
         // Update KPIs
@@ -209,7 +329,7 @@ async function loadSummaryData() {
 }
 
 // -------------------------------------------------------------
-// Interactive Leaflet Map (Guaranteed 100% Free Open Layers, Zero Watermark)
+// Interactive Leaflet Map (Guaranteed 100% Free Open Layers)
 // -------------------------------------------------------------
 function initLeafletMap() {
     map = L.map('map', {
@@ -218,28 +338,26 @@ function initLeafletMap() {
         zoomControl: true,
     });
 
-    // 1. OpenStreetMap (Clean Global Open Layer - 100% Free, Zero API Key)
+    // 1. OpenStreetMap
     const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors',
         maxZoom: 19
     });
 
-    // 2. ESRI Dark Gray Canvas (High-contrast Dark Theme - 100% Free, Zero API Key)
+    // 2. ESRI Dark Gray Canvas
     const darkLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
         attribution: '&copy; Esri, HERE, Garmin, METI/NASA, USGS',
         maxZoom: 16
     });
 
-    // 3. ESRI High-Resolution World Satellite Imagery (Space Observation Layer - 100% Free, Zero API Key)
+    // 3. ESRI Satellite Imagery
     const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
         attribution: '&copy; Esri, Maxar, Earthstar Geographics',
         maxZoom: 18
     });
 
-    // Default to ESRI Dark Gray Base for stunning dashboard appearance
     darkLayer.addTo(map);
 
-    // Layer Switcher on Top-Right
     const baseMaps = {
         "🌑 Dark Theme Map": darkLayer,
         "🗺️ Standard OpenStreetMap": osmLayer,
@@ -258,7 +376,7 @@ async function loadGISZones() {
     const minGrade = document.getElementById('gis-filter-grade').value;
 
     try {
-        const url = `/api/zones?state=${encodeURIComponent(state)}&min_prospectivity=${minScore}&min_grade=${minGrade}`;
+        const url = apiUrl(`/api/zones?state=${encodeURIComponent(state)}&min_prospectivity=${minScore}&min_grade=${minGrade}`);
         const res = await fetch(url);
         const data = await res.json();
 
@@ -279,85 +397,85 @@ async function loadGISZones() {
             const color = z.prospectivity_score >= 0.75 ? '#059669' :
                           z.prospectivity_score >= 0.50 ? '#0284c7' : '#d97706';
 
-            const marker = L.circleMarker([z.latitude, z.longitude], {
-                radius: 6,
+            const circle = L.circleMarker([z.latitude, z.longitude], {
+                radius: z.prospectivity_score >= 0.75 ? 8 : 6,
                 fillColor: color,
                 color: '#ffffff',
                 weight: 1.5,
-                opacity: 1.0,
+                opacity: 0.9,
                 fillOpacity: 0.85
             });
 
-            const popupContent = `
-                <div style="font-size: 11px; line-height: 1.45; font-family: sans-serif;">
-                    <b style="color: #0284c7; font-size: 13px;">${z.zone_id}</b> (${z.district}, ${z.state})<br/>
-                    <b>Mining Belt:</b> ${z.mining_belt}<br/>
-                    <b>Formation:</b> ${z.formation}<br/>
-                    <b>Prospectivity:</b> <span style="color: #059669; font-weight: bold;">${scorePct}%</span><br/>
-                    <b>Ore Grade:</b> <span style="color: #d97706; font-weight: bold;">${z.ore_grade_percent}% Mn</span><br/>
-                    <b>Potential:</b> ${Math.round(z.predicted_manganese_reserve_tonnes).toLocaleString()} tonnes<br/>
-                    <b>Operational Risk:</b> <b>${z.risk_level}</b>
+            circle.bindPopup(`
+                <div class="p-1 space-y-1.5 text-xs">
+                    <div class="font-bold text-sm text-cyan-400 border-b border-slate-700 pb-1 flex justify-between">
+                        <span>${z.zone_id}</span>
+                        <span class="text-xs px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">${z.state}</span>
+                    </div>
+                    <div><strong>Mining Belt:</strong> <span class="text-slate-300">${z.mining_belt}</span></div>
+                    <div><strong>Ore Grade:</strong> <span class="text-amber-400 font-bold">${z.ore_grade_percent}% Mn</span></div>
+                    <div><strong>Prospectivity:</strong> <span class="text-emerald-400 font-bold">${scorePct}%</span></div>
+                    <div><strong>Estimated Potential:</strong> <span class="text-slate-200">${Math.round(z.predicted_manganese_reserve_tonnes).toLocaleString()} tonnes</span></div>
+                    <div><strong>Operational Risk:</strong> <span class="font-bold ${
+                        z.risk_level === 'High' ? 'text-rose-400' : z.risk_level === 'Medium' ? 'text-amber-400' : 'text-emerald-400'
+                    }">${z.risk_level}</span></div>
+                    <button onclick="fillSimulatorWithZone(${JSON.stringify(z).replace(/"/g, '&quot;')})" class="w-full mt-2 bg-cyan-600 hover:bg-cyan-500 text-white font-semibold py-1 rounded text-center block transition">
+                        ⚡ Load into AI Simulator
+                    </button>
                 </div>
-            `;
-            marker.bindPopup(popupContent);
-            mapMarkersLayer.addLayer(marker);
-        });
+            `);
 
-        // Populate GIS Table
-        const gisTable = document.getElementById('table-gis-zones');
-        gisTable.innerHTML = data.zones.slice(0, 50).map(z => `
-            <tr class="hover:bg-slate-800/40 transition">
-                <td class="py-1.5 px-3 font-mono font-semibold text-cyan-400">${z.zone_id}</td>
-                <td class="py-1.5 px-3">${z.district}</td>
-                <td class="py-1.5 px-3">${z.state}</td>
-                <td class="py-1.5 px-3 text-amber-400 font-mono">${z.sentinel2_ferrous_index}</td>
-                <td class="py-1.5 px-3 text-amber-400 font-mono">${z.sentinel2_clay_index}</td>
-                <td class="py-1.5 px-3 font-mono">${z.ndvi}</td>
-                <td class="py-1.5 px-3 font-mono">${z.land_surface_temperature} °C</td>
-                <td class="py-1.5 px-3 font-semibold text-slate-200">${z.ore_grade_percent}%</td>
-                <td class="py-1.5 px-3 font-bold text-emerald-400">${(z.prospectivity_score * 100).toFixed(1)}%</td>
-            </tr>
-        `).join('');
+            mapMarkersLayer.addLayer(circle);
+        });
 
     } catch (err) {
         console.error("Error loading GIS zones:", err);
     }
 }
 
-function updateScoreLabel(val) {
-    document.getElementById('gis-score-label').innerText = `${val}%`;
+// Load a clicked zone into the simulator
+function fillSimulatorWithZone(z) {
+    switchTab('tab-simulator');
+    document.getElementById('sim-ferrous').value = z.sentinel2_ferrous_index || 1.45;
+    document.getElementById('sim-clay').value = z.sentinel2_clay_index || 1.30;
+    document.getElementById('sim-ndvi').value = z.ndvi || 0.28;
+    document.getElementById('sim-lst').value = z.land_surface_temperature || 34.5;
+    document.getElementById('sim-elev').value = z.elevation_m || 480;
+    document.getElementById('sim-geo').value = z.geological_score || 0.85;
+    document.getElementById('sim-grade').value = z.ore_grade_percent || 42.5;
+    document.getElementById('sim-prod').value = z.historical_production_tonnes || 32000;
+    document.getElementById('sim-eq').value = z.equipment_efficiency || 0.72;
+
+    updateSliderLabels();
+    runInference();
 }
 
-function updateGradeLabel(val) {
-    document.getElementById('gis-grade-label').innerText = `${val}%`;
+function updateSliderLabels() {
+    document.getElementById('val-sim-ferrous').innerText = parseFloat(document.getElementById('sim-ferrous').value).toFixed(2);
+    document.getElementById('val-sim-clay').innerText = parseFloat(document.getElementById('sim-clay').value).toFixed(2);
+    document.getElementById('val-sim-ndvi').innerText = parseFloat(document.getElementById('sim-ndvi').value).toFixed(2);
+    document.getElementById('val-sim-lst').innerText = `${parseFloat(document.getElementById('sim-lst').value).toFixed(1)} °C`;
+    document.getElementById('val-sim-elev').innerText = `${parseInt(document.getElementById('sim-elev').value)} m`;
+    document.getElementById('val-sim-geo').innerText = parseFloat(document.getElementById('sim-geo').value).toFixed(2);
+    document.getElementById('val-sim-grade').innerText = `${parseFloat(document.getElementById('sim-grade').value).toFixed(1)}%`;
+    document.getElementById('val-sim-prod').innerText = `${parseInt(document.getElementById('sim-prod').value).toLocaleString()} t`;
+    document.getElementById('val-sim-eq').innerText = `${(parseFloat(document.getElementById('sim-eq').value) * 100).toFixed(0)}%`;
 }
 
 // -------------------------------------------------------------
-// Live AI Simulation & Explainable AI (XAI)
+// AI Mineral Simulator & XAI Inference
 // -------------------------------------------------------------
-function updateSimValue(key, val) {
-    if (key === 'ferrous') document.getElementById('val-ferrous').innerText = val;
-    if (key === 'clay') document.getElementById('val-clay').innerText = val;
-    if (key === 'ndvi') document.getElementById('val-ndvi').innerText = val;
-    if (key === 'lst') document.getElementById('val-lst').innerText = `${val} °C`;
-    if (key === 'elev') document.getElementById('val-elev').innerText = `${val} m`;
-    if (key === 'geo') document.getElementById('val-geo').innerText = val;
-    if (key === 'grade') document.getElementById('val-grade').innerText = `${val}%`;
-    if (key === 'eq') document.getElementById('val-eq').innerText = `${Math.round(val * 100)}%`;
-    if (key === 'prod') document.getElementById('val-prod').innerText = `${Number(val).toLocaleString()} t`;
-}
-
 function initSimXAIChart() {
     const ctx = document.getElementById('chart-sim-xai').getContext('2d');
     chartSimXAI = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: [],
+            labels: ['Geological', 'Ferrous (SWIR)', 'Clay (SWIR)', 'Canopy Stress', 'Thermal LST'],
             datasets: [{
                 label: 'Signal Contribution',
-                data: [],
-                backgroundColor: ['#0284c7', '#0284c7', '#38bdf8', '#818cf8', '#6366f1'],
-                borderRadius: 4
+                data: [0.30, 0.22, 0.14, 0.12, 0.08],
+                backgroundColor: ['#38bdf8', '#0284c7', '#6366f1', '#10b981', '#f59e0b'],
+                borderRadius: 6
             }]
         },
         options: {
@@ -366,14 +484,16 @@ function initSimXAIChart() {
             maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
-                x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: '#1e293b' } },
-                y: { ticks: { color: '#cbd5e1', font: { size: 10 } }, grid: { display: false } }
+                x: { min: 0, max: 0.45, ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } },
+                y: { ticks: { color: '#cbd5e1', font: { size: 11 } }, grid: { display: false } }
             }
         }
     });
 }
 
 async function runInference() {
+    updateSliderLabels();
+
     const payload = {
         sentinel2_ferrous_index: parseFloat(document.getElementById('sim-ferrous').value),
         sentinel2_clay_index: parseFloat(document.getElementById('sim-clay').value),
@@ -388,7 +508,7 @@ async function runInference() {
     };
 
     try {
-        const res = await fetch('/api/predict', {
+        const res = await fetch(apiUrl('/api/predict'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)

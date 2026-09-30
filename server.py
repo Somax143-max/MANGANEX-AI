@@ -17,12 +17,12 @@ sys.path.insert(0, str(ROOT / "src"))
 from prediction_engine import get_model_metadata, predict_location
 
 app = FastAPI(
-    title="MANGANEX AI Platform",
+    title="MANGANEX AI Platform - Backend API",
     description="Space Technology & AI Decision-Support Platform for Ministry of Steel (SIH 2026)",
     version="3.0.0",
 )
 
-# Configurable CORS
+# Configurable CORS for cross-origin frontend (e.g. Vercel)
 cors_origins_raw = os.getenv("CORS_ORIGINS", "*")
 cors_origins = [origin.strip() for origin in cors_origins_raw.split(",") if origin.strip()] or ["*"]
 
@@ -70,8 +70,9 @@ class SimulationRequest(BaseModel):
 def health_check():
     return {
         "status": "healthy",
-        "service": "MANGANEX-AI",
+        "service": "MANGANEX-AI-Backend",
         "version": "3.0.0",
+        "platform": "Render",
         "environment": os.getenv("ENVIRONMENT", "production"),
     }
 
@@ -180,9 +181,17 @@ def get_metrics():
     return get_model_metadata()
 
 
-# Mount static assets
+# Mount static assets if present
 if FRONTEND_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
+
+
+@app.get("/app.js")
+def serve_app_js():
+    js_file = FRONTEND_DIR / "app.js"
+    if js_file.exists():
+        return FileResponse(js_file, media_type="application/javascript")
+    return JSONResponse(status_code=404, content={"error": "app.js not found"})
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -190,7 +199,7 @@ def serve_index():
     index_file = FRONTEND_DIR / "index.html"
     if index_file.exists():
         return FileResponse(index_file, media_type="text/html")
-    return HTMLResponse("<h1>MANGANEX AI Server Running</h1>")
+    return HTMLResponse("<h1>MANGANEX AI Backend API Running on Render</h1><p>Status: Healthy | Use endpoints /api/summary, /api/zones, /api/predict</p>")
 
 
 if __name__ == "__main__":

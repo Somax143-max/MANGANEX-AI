@@ -86,6 +86,15 @@
                 <span>Explainable AI (XAI)</span>
             </button>
         </nav>
+
+        <!-- Backend API Live Connection Badge -->
+        <div class="flex items-center space-x-2">
+            <button onclick="openApiConfigModal()" id="btn-backend-status" class="px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center space-x-2 bg-slate-900/90 border border-slate-700 hover:border-cyan-500 text-slate-300 hover:text-white" title="Configure or View Render Backend API Status">
+                <span id="backend-status-dot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                <span id="backend-status-text">Backend: Connecting...</span>
+                <i data-lucide="settings" class="w-3.5 h-3.5 text-slate-400"></i>
+            </button>
+        </div>
     </header>
 
     <!-- Main Content Area -->
@@ -591,10 +600,43 @@
 
     <!-- Footer -->
     <footer class="bg-slate-950 border-t border-slate-900 py-4 px-6 text-center text-xs text-slate-500">
-        ⛏️ <strong>MANGANEX AI</strong> • Smart India Hackathon 2026 • Problem Statement 26009 • Ministry of Steel, Government of India • FastAPI + Leaflet + Chart.js
+        ⛏️ <strong>MANGANEX AI</strong> • Smart India Hackathon 2026 • Problem Statement 26009 • Ministry of Steel, Government of India • FastAPI on Render + Leaflet on Vercel
     </footer>
 
+    <!-- Backend Connection Config Modal -->
+    <div id="modal-api-config" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="font-bold text-base text-white flex items-center space-x-2">
+                    <i data-lucide="server" class="w-5 h-5 text-cyan-400"></i>
+                    <span>Render Backend API Connection</span>
+                </h3>
+                <button onclick="closeApiConfigModal()" class="text-slate-400 hover:text-white p-1">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed">
+                When hosting this frontend on <strong>Vercel</strong>, enter your <strong>Render Web Service URL</strong> below (or leave blank to use same-origin proxy):
+            </p>
+            <div class="space-y-1.5">
+                <label class="text-xs font-semibold text-slate-300">Render Backend URL</label>
+                <input id="input-backend-url" type="url" placeholder="https://manganex-ai.onrender.com" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-cyan-300 placeholder-slate-500 focus:outline-none focus:border-cyan-500 font-mono" />
+                <p class="text-[11px] text-slate-400">Example: <code class="text-cyan-400">https://manganex-ai.onrender.com</code></p>
+            </div>
+            <div id="api-test-result" class="text-xs hidden p-2.5 rounded-lg font-medium"></div>
+            <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-800">
+                <button onclick="resetBackendUrl()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition">
+                    Reset
+                </button>
+                <button onclick="testAndSaveBackendUrl()" class="px-4 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs flex items-center space-x-1.5 shadow transition">
+                    <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                    <span>Test & Connect</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- App JavaScript with Cache Buster -->
-    <script src="/static/app.js?v=4.0.0"></script>
+    <script src="./app.js?v=4.1.0"></script>
 </body>
 </html>
