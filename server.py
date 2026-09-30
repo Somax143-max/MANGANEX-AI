@@ -1,11 +1,12 @@
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import pandas as pd
@@ -21,9 +22,13 @@ app = FastAPI(
     version="3.0.0",
 )
 
+# Configurable CORS
+cors_origins_raw = os.getenv("CORS_ORIGINS", "*")
+cors_origins = [origin.strip() for origin in cors_origins_raw.split(",") if origin.strip()] or ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -34,6 +39,7 @@ FRONTEND_DIR = ROOT / "frontend"
 FRONTEND_DIR.mkdir(exist_ok=True)
 
 df_cache = None
+
 
 def get_df():
     global df_cache
@@ -57,6 +63,17 @@ class SimulationRequest(BaseModel):
     historical_production_tonnes: float = 32000.0
     equipment_efficiency: float = 0.72
     rainfall_mm: float = 1150.0
+
+
+@app.get("/health")
+@app.get("/api/health")
+def health_check():
+    return {
+        "status": "healthy",
+        "service": "MANGANEX-AI",
+        "version": "3.0.0",
+        "environment": os.getenv("ENVIRONMENT", "production"),
+    }
 
 
 @app.get("/api/summary")
@@ -164,7 +181,8 @@ def get_metrics():
 
 
 # Mount static assets
-app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
+if FRONTEND_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -177,4 +195,6 @@ def serve_index():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("server:app", host="0.0.0.0", port=7860, reload=True)
+    port = int(os.environ.get("PORT", 7860))
+    is_dev = os.environ.get("ENVIRONMENT", "development").lower() == "development"
+    uvicorn.run("server:app", host="0.0.0.0", port=port, reload=is_dev)

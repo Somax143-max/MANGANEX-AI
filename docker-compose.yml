@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  manganex-ai:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: manganex_ai_app
+    ports:
+      - "7860:7860"
+    environment:
+      - PORT=7860
+      - ENVIRONMENT=production
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7860/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s

@@ -6,8 +6,12 @@
 
 ---
 
-## 🌐 Live Web Application (Zero-Streamlit Fast Web Dashboard)
-🔗 **[https://aquatic-rides-application-pillow.trycloudflare.com](https://aquatic-rides-application-pillow.trycloudflare.com)**
+## 🚀 Live Demo & Deployment Status
+
+- **Web Application:** FastAPI + HTML5/Tailwind/Leaflet/Chart.js Dashboard
+- **Production Port:** `7860` (or dynamic `$PORT`)
+- **API Health Endpoint:** `/health` & `/api/health`
+- **Deployment Guide:** Complete instructions for Vercel, Render, Railway, Hugging Face Spaces & Docker in [**`DEPLOYMENT.md`**](DEPLOYMENT.md)
 
 ---
 
@@ -38,11 +42,11 @@ India is among the world's leading producers of manganese ore, yet significant q
 - **Backend:** FastAPI, Uvicorn, Python 3.10+
 - **Machine Learning:** Scikit-Learn (Random Forest Regressors & Classifiers), Joblib, NumPy, Pandas
 - **Frontend / UI:** Modern HTML5, Tailwind CSS, Leaflet.js, Chart.js, Lucide Icons
-- **Deployment / Tunneling:** Cloudflare Tunnel (`cloudflared`)
+- **Production & Containerization:** Docker, Docker Compose, Vercel, Render, Railway, Hugging Face Spaces
 
 ---
 
-## 💻 Quickstart (Local Setup)
+## 💻 Quickstart (Local Run)
 
 ```bash
 # 1. Clone the repository
@@ -56,9 +60,20 @@ pip install -r requirements.txt
 python server.py
 # Open http://localhost:7860 in your browser!
 
-# 4. Or launch the Streamlit edition (Optional)
-streamlit run dashboard/app.py
+# 4. Or run via Docker
+docker compose up --build
 ```
+
+---
+
+## 🌐 1-Click Deployment
+
+See [**`DEPLOYMENT.md`**](DEPLOYMENT.md) for complete guides:
+- **Vercel:** Ready with `vercel.json` & `api/index.py`
+- **Render:** 1-click deploy with `render.yaml` & `Procfile`
+- **Railway:** Auto-configured with `railway.json`
+- **Hugging Face Spaces:** Containerized with `Dockerfile` (Port 7860)
+- **Docker / Cloud Run:** Multi-platform Linux container with built-in health check
 
 ---
 
