@@ -1,18 +1,5 @@
 {
-  "version": 2,
-  "public": true,
   "cleanUrls": true,
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        }
-      ]
-    }
-  ],
   "rewrites": [
     {
       "source": "/",
@@ -24,6 +11,10 @@
     },
     {
       "source": "/static/:path*",
+      "destination": "/frontend/:path*"
+    },
+    {
+      "source": "/:path*",
       "destination": "/frontend/:path*"
     }
   ]
