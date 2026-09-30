@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MANGANEX AI | Ministry of Steel | SIH 2026</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#090d16',
+                        cardBg: '#111827',
+                        cardBorder: '#1e293b',
+                        cyanAccent: '#00A8E8',
+                        steelBlue: '#1e3a8a',
+                        orangeAccent: '#f97316',
+                        greenAccent: '#10b981',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Leaflet CSS & JS for 3D Dark Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { background-color: #090d16; font-family: system-ui, -apple-system, sans-serif; }
+        .gradient-border { border: 1px solid rgba(56, 189, 248, 0.25); }
+        .hero-gradient { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0369a1 100%); }
+        #map { height: 500px; width: 100%; border-radius: 12px; z-index: 10; }
+        .leaflet-popup-content-wrapper { background: #0f172a !important; color: #f8fafc !important; border: 1px solid #38bdf8; border-radius: 8px; }
+        .leaflet-popup-tip { background: #0f172a !important; }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #090d16; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #38bdf8; }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen flex flex-col antialiased">
+
+    <!-- Top Navigation Bar -->
+    <header class="bg-cardBg/90 backdrop-blur border-b border-cardBorder sticky top-0 z-50 px-6 py-3.5 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-700 flex items-center justify-center font-bold text-xl text-white shadow-lg shadow-cyan-500/20">
+                ⛏️
+            </div>
+            <div>
+                <div class="flex items-center space-x-2">
+                    <span class="font-extrabold text-xl tracking-tight text-white">MANGANEX AI</span>
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-400 border border-cyan-700 font-semibold">PS 26009</span>
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-amber-950 text-amber-400 border border-amber-700 font-semibold">Ministry of Steel</span>
+                </div>
+                <p class="text-xs text-slate-400">Space Technology & AI Decision-Support Platform for Domestic Mineral Security</p>
+            </div>
+        </div>
+
+        <!-- Tab Buttons -->
+        <nav class="flex items-center space-x-1 bg-slate-900/80 p-1 rounded-xl border border-slate-800">
+            <button onclick="switchTab('tab-executive')" id="nav-executive" class="nav-tab px-3.5 py-1.5 rounded-lg text-sm font-semibold transition flex items-center space-x-1.5 bg-cyan-600 text-white shadow">
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                <span>Executive Overview</span>
+            </button>
+            <button onclick="switchTab('tab-gis')" id="nav-gis" class="nav-tab px-3.5 py-1.5 rounded-lg text-sm font-semibold text-slate-400 hover:text-white transition flex items-center space-x-1.5">
+                <i data-lucide="map" class="w-4 h-4"></i>
+                <span>Space GIS Hub</span>
+            </button>
+            <button onclick="switchTab('tab-production')" id="nav-production" class="nav-tab px-3.5 py-1.5 rounded-lg text-sm font-semibold text-slate-400 hover:text-white transition flex items-center space-x-1.5">
+                <i data-lucide="trending-up" class="w-4 h-4"></i>
+                <span>Production Shortfall</span>
+            </button>
+            <button onclick="switchTab('tab-simulator')" id="nav-simulator" class="nav-tab px-3.5 py-1.5 rounded-lg text-sm font-semibold text-slate-400 hover:text-white transition flex items-center space-x-1.5">
+                <i data-lucide="cpu" class="w-4 h-4"></i>
+                <span>AI Simulator Lab</span>
+            </button>
+            <button onclick="switchTab('tab-xai')" id="nav-xai" class="nav-tab px-3.5 py-1.5 rounded-lg text-sm font-semibold text-slate-400 hover:text-white transition flex items-center space-x-1.5">
+                <i data-lucide="layers" class="w-4 h-4"></i>
+                <span>Explainable AI (XAI)</span>
+            </button>
+        </nav>
+
+        <!-- Backend API Live Connection Badge -->
+        <div class="flex items-center space-x-2">
+            <button onclick="openApiConfigModal()" id="btn-backend-status" class="px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center space-x-2 bg-slate-900/90 border border-slate-700 hover:border-cyan-500 text-slate-300 hover:text-white" title="Configure or View Render Backend API Status">
+                <span id="backend-status-dot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                <span id="backend-status-text">Backend: Connecting...</span>
+                <i data-lucide="settings" class="w-3.5 h-3.5 text-slate-400"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-6 space-y-6">
+
+        <!-- ======================================================== -->
+        <!-- TAB 1: EXECUTIVE OVERVIEW -->
+        <!-- ======================================================== -->
+        <section id="tab-executive" class="tab-content space-y-6">
+            <!-- Hero Banner -->
+            <div class="hero-gradient rounded-2xl p-6 border border-cyan-500/20 shadow-2xl relative overflow-hidden">
+                <div class="relative z-10 max-w-4xl space-y-2">
+                    <div class="inline-flex items-center space-x-2 text-xs font-bold tracking-wider text-cyan-300 uppercase px-2.5 py-1 rounded-full bg-cyan-950/60 border border-cyan-700/50">
+                        <span>Smart India Hackathon 2026</span>
+                        <span>•</span>
+                        <span>Problem Statement 26009</span>
+                    </div>
+                    <h1 class="text-3xl font-extrabold text-white tracking-tight">National Manganese Mineral Intelligence Command Center</h1>
+                    <p class="text-slate-300 text-sm leading-relaxed">
+                        Fusing Sentinel-2 MSI multispectral alteration signatures (SWIR/NIR) and Landsat thermal inertia with geological lithology models to accelerate domestic mineral discovery and overcome supply deficits for India's steel and EV battery ecosystems.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Top KPI Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div class="bg-cardBg border border-cardBorder rounded-xl p-4 shadow">
+                    <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider block">Model-Estimated Potential</span>
+                    <span id="kpi-potential" class="text-2xl font-bold text-cyan-400 mt-1 block">-- M t</span>
+                    <span class="text-[11px] text-slate-400 mt-0.5 block">592 Monitored Clusters</span>
+                </div>
+                <div class="bg-cardBg border border-cardBorder rounded-xl p-4 shadow">
+                    <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider block">Historical Baseline</span>
+                    <span id="kpi-historical" class="text-2xl font-bold text-slate-200 mt-1 block">-- M t</span>
+                    <span class="text-[11px] text-slate-400 mt-0.5 block">Annual Domestic Capacity</span>
+                </div>
+                <div class="bg-cardBg border border-cardBorder rounded-xl p-4 shadow">
+                    <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider block">Predicted Output</span>
+                    <span id="kpi-predicted" class="text-2xl font-bold text-slate-200 mt-1 block">-- M t</span>
+                    <span class="text-[11px] text-slate-400 mt-0.5 block">AI Extrapolated Forecast</span>
+                </div>
+                <div class="bg-cardBg border border-cardBorder rounded-xl p-4 shadow">
+                    <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider block">National Shortfall</span>
+                    <span id="kpi-shortfall" class="text-2xl font-bold text-rose-400 mt-1 block">-- M t</span>
+                    <span id="kpi-gap" class="text-[11px] text-rose-400 font-semibold mt-0.5 block">--% Deficit Gap</span>
+                </div>
+                <div class="bg-cardBg border border-cardBorder rounded-xl p-4 shadow">
+                    <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider block">Tier-1 Target Zones</span>
+                    <span id="kpi-tier1" class="text-2xl font-bold text-emerald-400 mt-1 block">--</span>
+                    <span class="text-[11px] text-emerald-400/80 font-medium mt-0.5 block">High Prospectivity (>75%)</span>
+                </div>
+            </div>
+
+            <!-- Decision Pipeline Flowchart -->
+            <div class="bg-cardBg border border-cardBorder rounded-xl p-5 shadow">
+                <h3 class="text-base font-bold text-slate-200 mb-3 flex items-center space-x-2">
+                    <i data-lucide="git-merge" class="w-4 h-4 text-cyan-400"></i>
+                    <span>MANGANEX AI End-to-End Decision Pipeline</span>
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-3 text-center">
+                    <div class="bg-slate-900 border border-slate-800 p-3 rounded-lg">
+                        <span class="text-xl">🛰️</span>
+                        <div class="font-bold text-xs text-cyan-400 mt-1">Space Observation</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5">Sentinel-2 SWIR & Landsat LST</div>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 p-3 rounded-lg">
+                        <span class="text-xl">⛰️</span>
+                        <div class="font-bold text-indigo-400 mt-1">Geological Fusion</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5">Sausar/Gondite/Dharwar Formations</div>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 p-3 rounded-lg">
+                        <span class="text-xl">🤖</span>
+                        <div class="font-bold text-amber-400 mt-1">AI Prospectivity</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5">Random Forest Regressors</div>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 p-3 rounded-lg">
+                        <span class="text-xl">📈</span>
+                        <div class="font-bold text-rose-400 mt-1">Shortfall Warning</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5">Deficit detection 3-6 mo early</div>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 p-3 rounded-lg">
+                        <span class="text-xl">📋</span>
+                        <div class="font-bold text-emerald-400 mt-1">Strategic Action</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5">Ministry Drilling & Allocation</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- State Charts Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-cardBg border border-cardBorder rounded-xl p-5 shadow">
+                    <h3 class="text-sm font-bold text-slate-200 mb-3 flex items-center justify-between">
+                        <span>State-Wise Manganese Potential (Million Tonnes)</span>
+                        <span class="text-xs text-cyan-400 font-normal">Model-Estimated</span>
+                    </h3>
+                    <div class="h-64">
+                        <canvas id="chart-state-potential"></canvas>
+                    </div>
+                </div>
+                <div class="bg-cardBg border border-cardBorder rounded-xl p-5 shadow">
+                    <h3 class="text-sm font-bold text-slate-200 mb-3 flex items-center justify-between">
+                        <span>Predicted Production Shortfall by State (Thousand Tonnes)</span>
+                        <span class="text-xs text-rose-400 font-normal">Deficit Alert</span>
+                    </h3>
+                    <div class="h-64">
+                        <canvas id="chart-state-shortfall"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Candidate Targets Table -->
+            <div class="bg-cardBg border border-cardBorder rounded-xl p-5 shadow space-y-3">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-sm font-bold text-slate-200">Top Priority Tier-1 Exploration Targets (India)</h3>
+                    <span class="text-xs text-slate-400">Ranked by Composite AI Prospectivity Score</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs text-left text-slate-300">
+                        <thead class="text-slate-400 uppercase bg-slate-900/60 border-b border-slate-800">
+                            <tr>
+                                <th class="py-2.5 px-3">Zone ID</th>
+                                <th class="py-2.5 px-3">State</th>
+                                <th class="py-2.5 px-3">District / Hub</th>
+                                <th class="py-2.5 px-3">Mining Belt</th>
+                                <th class="py-2.5 px-3">Grade (% Mn)</th>
+                                <th class="py-2.5 px-3">Prospectivity</th>
+                                <th class="py-2.5 px-3">Estimated Potential</th>
+                                <th class="py-2.5 px-3">Risk</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-top-targets" class="divide-y divide-slate-800/60">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ======================================================== -->
+        <!-- TAB 2: SPACE TECH & PROSPECTIVITY GIS HUB -->
+        <!-- ======================================================== -->
+        <section id="tab-gis" class="tab-content hidden space-y-6">
+            <div class="bg-cardBg border border-cardBorder rounded-xl p-5 shadow space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+                            <i data-lucide="satellite" class="w-5 h-5 text-cyan-400"></i>
+                            <span>Satellite Earth Observation & Geospatial Prospectivity Hub</span>
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Interactive spatial exploration of 592 manganese deposit clusters across India.</p>
+                    </div>
+
+                    <!-- Filters -->
+                    <div class="flex flex-wrap items-center gap-3">
+                        <div>
+                            <label class="text-[11px] text-slate-400 block font-semibold">Filter State:</label>
+                            <select id="gis-filter-state" onchange="loadGISZones()" class="bg-slate-900 text-xs border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200">
+                                <option value="All States">All States</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[11px] text-slate-400 block font-semibold">Min Prospectivity: <span id="gis-score-label" class="text-cyan-400">40%</span></label>
+                            <input id="gis-filter-score" type="range" min="0" max="95" value="40" oninput="updateScoreLabel(this.value); loadGISZones()" class="w-28 accent-cyan-500">
+                        </div>
+                        <div>
+                            <label class="text-[11px] text-slate-400 block font-semibold">Min Ore Grade (% Mn): <span id="gis-grade-label" class="text-amber-400">30%</span></label>
+                            <input id="gis-filter-grade" type="range" min="24" max="46" value="30" oninput="updateGradeLabel(this.value); loadGISZones()" class="w-28 accent-amber-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Leaflet Interactive Map -->
+                <div id="map" class="shadow-inner border border-slate-800"></div>
+
+                <!-- GIS Table of Matching Candidates -->
+                <div class="space-y-2 mt-4">
+                    <div class="flex items-center justify-between">
+                        <h4 class="text-xs font-bold text-slate-300">Filtered Cluster Anomalies (<span id="gis-matching-count" class="text-cyan-400">0</span> zones matching):</h4>
+                    </div>
+                    <div class="overflow-x-auto max-h-72">
+                        <table class="w-full text-xs text-left text-slate-300">
+                            <thead class="text-slate-400 uppercase bg-slate-900 sticky top-0 border-b border-slate-800">
+                                <tr>
+                                    <th class="py-2 px-3">Zone ID</th>
+                                    <th class="py-2 px-3">District</th>
+                                    <th class="py-2 px-3">State</th>
+                                    <th class="py-2 px-3">Ferrous Index (B11/8A)</th>
+                                    <th class="py-2 px-3">Clay Index (B11/12)</th>
+                                    <th class="py-2 px-3">NDVI</th>
+                                    <th class="py-2 px-3">LST (°C)</th>
+                                    <th class="py-2 px-3">Grade (% Mn)</th>
+                                    <th class="py-2 px-3">Prospectivity</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-gis-zones" class="divide-y divide-slate-800">
+                                <!-- Populated via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ======================================================== -->
+        <!-- TAB 3: PRODUCTION INTELLIGENCE & SHORTFALL -->
+        <!-- ======================================================== -->
+        <section id="tab-production" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-cardBg border border-cardBorder rounded-xl p-5 shadow col-span-2">
+                    <h3 class="text-sm font-bold text-slate-200 mb-3">Historical Baseline vs. AI Forecasted Output vs. Shortfall (Tonnes)</h3>
+                    <div class="h-64">
+                        <canvas id="chart-prod-comparison"></canvas>
+                    </div>
+                </div>
+                <div class="bg-cardBg border border-cardBorder rounded-xl p-5 shadow">
+                    <h3 class="text-sm font-bold text-slate-200 mb-3">Multi-Hazard Operational Risk Distribution</h3>
+                    <div class="h-64 flex items-center justify-center">
+                        <canvas id="chart-risk-pie"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-cardBg border border-cardBorder rounded-xl p-5 shadow space-y-3">
+                <h3 class="text-sm font-bold text-slate-200">Major Extraction Shortfall Hotspots (Corrective Actions Required)</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs text-left text-slate-300">
+                        <thead class="text-slate-400 uppercase bg-slate-900 border-b border-slate-800">
+                            <tr>
+                                <th class="py-2.5 px-3">Zone ID</th>
+                                <th class="py-2.5 px-3">State</th>
+                                <th class="py-2.5 px-3">District</th>
+                                <th class="py-2.5 px-3">Historical (t)</th>
+                                <th class="py-2.5 px-3">Predicted (t)</th>
+                                <th class="py-2.5 px-3">Shortfall Deficit</th>
+                                <th class="py-2.5 px-3">Gap %</th>
+                                <th class="py-2.5 px-3">Eq. Efficiency</th>
+                                <th class="py-2.5 px-3">Risk Level</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-shortfall-hotspots" class="divide-y divide-slate-800">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ======================================================== -->
+        <!-- TAB 4: AI MINERAL SIMULATOR & SCENARIO LAB -->
+        <!-- ======================================================== -->
+        <section id="tab-simulator" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Sliders Container -->
+                <div class="bg-cardBg border border-cardBorder rounded-xl p-5 shadow space-y-4">
+                    <div class="border-b border-slate-800 pb-2">
+                        <h3 class="text-sm font-bold text-cyan-400 flex items-center space-x-1.5">
+                            <i data-lucide="satellite" class="w-4 h-4"></i>
+                            <span>Space & Earth Observation Inputs</span>
+                        </h3>
+                    </div>
+                    
+                    <div class="space-y-3 text-xs">
+                        <div>
+                            <div class="flex justify-between font-semibold text-slate-300">
+                                <span>Sentinel-2 Ferrous Oxide (B11/B8A):</span>
+                                <span id="val-ferrous" class="text-cyan-400 font-bold">1.45</span>
+                            </div>
+                            <input id="sim-ferrous" type="range" min="0.50" max="2.20" step="0.05" value="1.45" oninput="updateSimValue('ferrous', this.value)" class="w-full accent-cyan-500">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between font-semibold text-slate-300">
+                                <span>Sentinel-2 Clay Minerals (B11/B12):</span>
+                                <span id="val-clay" class="text-cyan-400 font-bold">1.30</span>
+                            </div>
+                            <input id="sim-clay" type="range" min="0.40" max="2.00" step="0.05" value="1.30" oninput="updateSimValue('clay', this.value)" class="w-full accent-cyan-500">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between font-semibold text-slate-300">
+                                <span>Vegetation Index (NDVI):</span>
+                                <span id="val-ndvi" class="text-cyan-400 font-bold">0.28</span>
+                            </div>
+                            <input id="sim-ndvi" type="range" min="0.10" max="0.85" step="0.02" value="0.28" oninput="updateSimValue('ndvi', this.value)" class="w-full accent-cyan-500">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between font-semibold text-slate-300">
+                                <span>Land Surface Temp - LST (°C):</span>
+                                <span id="val-lst" class="text-cyan-400 font-bold">34.5 °C</span>
+                            </div>
+                            <input id="sim-lst" type="range" min="22.0" max="44.0" step="0.5" value="34.5" oninput="updateSimValue('lst', this.value)" class="w-full accent-cyan-500">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between font-semibold text-slate-300">
+                                <span>Elevation - SRTM DEM (meters):</span>
+                                <span id="val-elev" class="text-cyan-400 font-bold">480 m</span>
+                            </div>
+                            <input id="sim-elev" type="range" min="100.0" max="900.0" step="10.0" value="480.0" oninput="updateSimValue('elev', this.value)" class="w-full accent-cyan-500">
+                        </div>
+                    </div>
+
+                    <div class="border-b border-slate-800 pb-2 pt-2">
+                        <h3 class="text-sm font-bold text-indigo-400 flex items-center space-x-1.5">
+                            <i data-lucide="settings" class="w-4 h-4"></i>
+                            <span>Geology & Operational Inputs</span>
+                        </h3>
+                    </div>
+
+                    <div class="space-y-3 text-xs">
+                        <div>
+                            <div class="flex justify-between font-semibold text-slate-300">
+                                <span>Geological Host Lithology Score:</span>
+                                <span id="val-geo" class="text-indigo-400 font-bold">0.85</span>
+                            </div>
+                            <input id="sim-geo" type="range" min="0.10" max="1.00" step="0.05" value="0.85" oninput="updateSimValue('geo', this.value)" class="w-full accent-indigo-500">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between font-semibold text-slate-300">
+                                <span>Estimated Ore Grade (% Mn):</span>
+                                <span id="val-grade" class="text-indigo-400 font-bold">42.5%</span>
+                            </div>
+                            <input id="sim-grade" type="range" min="24.0" max="48.0" step="0.5" value="42.5" oninput="updateSimValue('grade', this.value)" class="w-full accent-indigo-500">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between font-semibold text-slate-300">
+                                <span>Equipment Efficiency:</span>
+                                <span id="val-eq" class="text-indigo-400 font-bold">72%</span>
+                            </div>
+                            <input id="sim-eq" type="range" min="0.45" max="0.98" step="0.02" value="0.72" oninput="updateSimValue('eq', this.value)" class="w-full accent-indigo-500">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between font-semibold text-slate-300">
+                                <span>Historical Baseline Output:</span>
+                                <span id="val-prod" class="text-indigo-400 font-bold">32,000 t</span>
+                            </div>
+                            <input id="sim-prod" type="number" min="5000" max="50000" step="1000" value="32000" oninput="updateSimValue('prod', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-slate-200">
+                        </div>
+                    </div>
+
+                    <button onclick="runInference()" class="w-full py-2.5 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-sm tracking-wide shadow-lg shadow-cyan-500/20 transition flex items-center justify-center space-x-2">
+                        <i data-lucide="zap" class="w-4 h-4"></i>
+                        <span>⚡ RUN AI INFERENCE PIPELINE</span>
+                    </button>
+                </div>
+
+                <!-- Simulation Output & XAI Breakdown -->
+                <div class="space-y-4">
+                    <!-- 4 Output KPIs -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-cardBg border border-cardBorder rounded-xl p-3.5 shadow">
+                            <span class="text-[11px] text-slate-400 font-semibold uppercase block">Prospectivity Score</span>
+                            <span id="sim-res-score" class="text-2xl font-black text-cyan-400">78.8%</span>
+                            <span id="sim-res-conf" class="text-[10px] text-emerald-400 font-medium block">Confidence: 95%</span>
+                        </div>
+                        <div class="bg-cardBg border border-cardBorder rounded-xl p-3.5 shadow">
+                            <span class="text-[11px] text-slate-400 font-semibold uppercase block">Estimated Potential</span>
+                            <span id="sim-res-pot" class="text-2xl font-black text-slate-100">467,332 t</span>
+                            <span class="text-[10px] text-slate-400 block">Random Forest Regressor</span>
+                        </div>
+                        <div class="bg-cardBg border border-cardBorder rounded-xl p-3.5 shadow">
+                            <span class="text-[11px] text-slate-400 font-semibold uppercase block">Predicted Shortfall</span>
+                            <span id="sim-res-short" class="text-2xl font-black text-rose-400">1,186 t</span>
+                            <span id="sim-res-gap" class="text-[10px] text-rose-400 font-medium block">3.4% Deficit Gap</span>
+                        </div>
+                        <div class="bg-cardBg border border-cardBorder rounded-xl p-3.5 shadow">
+                            <span class="text-[11px] text-slate-400 font-semibold uppercase block">Operational Risk</span>
+                            <span id="sim-res-risk" class="text-2xl font-black text-amber-400">Medium</span>
+                            <span class="text-[10px] text-slate-400 block">Random Forest Classifier</span>
+                        </div>
+                    </div>
+
+                    <!-- Explainable AI Chart -->
+                    <div class="bg-cardBg border border-cardBorder rounded-xl p-4 shadow space-y-2">
+                        <h4 class="text-xs font-bold text-slate-200 flex items-center space-x-1.5">
+                            <i data-lucide="bar-chart-2" class="w-4 h-4 text-cyan-400"></i>
+                            <span>Explainable AI (XAI): Transparent Feature Drivers</span>
+                        </h4>
+                        <div class="h-44">
+                            <canvas id="chart-sim-xai"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Action Recommendations -->
+                    <div class="bg-cardBg border border-cardBorder rounded-xl p-4 shadow space-y-2">
+                        <h4 class="text-xs font-bold text-slate-200">📋 AI Strategic Recommendations & Policy Action Plan</h4>
+                        <div id="sim-recommendations" class="space-y-2 text-xs">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ======================================================== -->
+        <!-- TAB 5: EXPLAINABLE AI (XAI) & SPACE ARCHITECTURE -->
+        <!-- ======================================================== -->
+        <section id="tab-xai" class="tab-content hidden space-y-6">
+            <!-- Satellite Band Formulation Matrix -->
+            <div class="bg-cardBg border border-cardBorder rounded-xl p-5 shadow space-y-3">
+                <h3 class="text-sm font-bold text-cyan-400 flex items-center space-x-2">
+                    <i data-lucide="satellite" class="w-4 h-4"></i>
+                    <span>Satellite Multispectral & Thermal Band Formulations</span>
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs text-left text-slate-300">
+                        <thead class="text-slate-400 uppercase bg-slate-900 border-b border-slate-800">
+                            <tr>
+                                <th class="py-2.5 px-3">Index Name</th>
+                                <th class="py-2.5 px-3">Satellite Constellation</th>
+                                <th class="py-2.5 px-3">Spectral Formulation</th>
+                                <th class="py-2.5 px-3">Geological Significance for Manganese</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800 text-slate-300">
+                            <tr>
+                                <td class="py-2 px-3 font-semibold text-cyan-400">Ferrous Iron / Gossan Index</td>
+                                <td class="py-2 px-3">Sentinel-2 MSI</td>
+                                <td class="py-2 px-3 font-mono text-amber-300">Band 11 (SWIR-1) / Band 8A (Narrow NIR)</td>
+                                <td class="py-2 px-3 text-slate-400">Highlights supergene enriched iron-manganese oxide caps.</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 px-3 font-semibold text-cyan-400">Clay Minerals Index</td>
+                                <td class="py-2 px-3">Sentinel-2 MSI</td>
+                                <td class="py-2 px-3 font-mono text-amber-300">Band 11 (SWIR-1) / Band 12 (SWIR-2)</td>
+                                <td class="py-2 px-3 text-slate-400">Detects hydrothermal clay alteration envelopes in host rocks.</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 px-3 font-semibold text-cyan-400">Vegetation Stress (NDVI)</td>
+                                <td class="py-2 px-3">Sentinel-2 MSI</td>
+                                <td class="py-2 px-3 font-mono text-amber-300">(Band 8 - Band 4) / (Band 8 + Band 4)</td>
+                                <td class="py-2 px-3 text-slate-400">Stressed/sparse canopies correlate with shallow metal outcrops.</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 px-3 font-semibold text-cyan-400">Land Surface Temp (LST)</td>
+                                <td class="py-2 px-3">Landsat-8/9 TIRS</td>
+                                <td class="py-2 px-3 font-mono text-amber-300">Thermal Band 10 Split-Window Algorithm</td>
+                                <td class="py-2 px-3 text-slate-400">Detects high thermal inertia of exposed quartz-manganese lithology.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Model Benchmark Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-cardBg border border-cardBorder rounded-xl p-5 shadow space-y-2">
+                    <h4 class="text-sm font-bold text-slate-200">1. Manganese Potential Model</h4>
+                    <p class="text-xs text-slate-400">Random Forest Regressor (300 Trees)</p>
+                    <div class="pt-2 space-y-1 text-xs text-slate-300">
+                        <div class="flex justify-between"><span>Validation MAE:</span> <strong class="text-cyan-400">50,500 t</strong></div>
+                        <div class="flex justify-between"><span>R² Score:</span> <strong class="text-cyan-400">0.6870</strong></div>
+                        <div class="flex justify-between"><span>Training Clusters:</span> <strong class="text-slate-200">592</strong></div>
+                    </div>
+                </div>
+
+                <div class="bg-cardBg border border-cardBorder rounded-xl p-5 shadow space-y-2">
+                    <h4 class="text-sm font-bold text-slate-200">2. Shortfall Regressor</h4>
+                    <p class="text-xs text-slate-400">Random Forest Regressor (300 Trees)</p>
+                    <div class="pt-2 space-y-1 text-xs text-slate-300">
+                        <div class="flex justify-between"><span>Validation MAE:</span> <strong class="text-rose-400">544 t</strong></div>
+                        <div class="flex justify-between"><span>R² Score:</span> <strong class="text-rose-400">0.2172</strong></div>
+                        <div class="flex justify-between"><span>Early Warning Window:</span> <strong class="text-slate-200">3-6 Months</strong></div>
+                    </div>
+                </div>
+
+                <div class="bg-cardBg border border-cardBorder rounded-xl p-5 shadow space-y-2">
+                    <h4 class="text-sm font-bold text-slate-200">3. Operational Risk Model</h4>
+                    <p class="text-xs text-slate-400">Random Forest Classifier (300 Trees)</p>
+                    <div class="pt-2 space-y-1 text-xs text-slate-300">
+                        <div class="flex justify-between"><span>Test Accuracy:</span> <strong class="text-emerald-400">97.48%</strong></div>
+                        <div class="flex justify-between"><span>Risk Classes:</span> <strong class="text-emerald-400">Low / Med / High</strong></div>
+                        <div class="flex justify-between"><span>Multi-Hazard Scoring:</span> <strong class="text-slate-200">Yes</strong></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ministry Policy Alignment Brief -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-5 shadow space-y-2">
+                <h4 class="text-sm font-bold text-amber-400">🏛️ Strategic Alignment with Ministry of Steel (PS 26009)</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-300 pt-1">
+                    <div>
+                        <strong class="text-white">1. Import Substitution for Steel & EV Battery Precursors:</strong>
+                        <p class="text-slate-400 mt-0.5">Prioritizes high-grade domestic manganese belts to curb expensive foreign ore imports.</p>
+                    </div>
+                    <div>
+                        <strong class="text-white">2. Accelerated Greenfield Mineral Discovery:</strong>
+                        <p class="text-slate-400 mt-0.5">Reduces exploration turnaround by over 60% compared to traditional exploratory grid drilling.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-950 border-t border-slate-900 py-4 px-6 text-center text-xs text-slate-500">
+        ⛏️ <strong>MANGANEX AI</strong> • Smart India Hackathon 2026 • Problem Statement 26009 • Ministry of Steel, Government of India • FastAPI on Render + Leaflet on Vercel
+    </footer>
+
+    <!-- Backend Connection Config Modal -->
+    <div id="modal-api-config" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="font-bold text-base text-white flex items-center space-x-2">
+                    <i data-lucide="server" class="w-5 h-5 text-cyan-400"></i>
+                    <span>Render Backend API Connection</span>
+                </h3>
+                <button onclick="closeApiConfigModal()" class="text-slate-400 hover:text-white p-1">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed">
+                When hosting this frontend on <strong>Vercel</strong>, enter your <strong>Render Web Service URL</strong> below (or leave blank to use same-origin proxy):
+            </p>
+            <div class="space-y-1.5">
+                <label class="text-xs font-semibold text-slate-300">Render Backend URL</label>
+                <input id="input-backend-url" type="url" placeholder="https://manganex-ai.onrender.com" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-cyan-300 placeholder-slate-500 focus:outline-none focus:border-cyan-500 font-mono" />
+                <p class="text-[11px] text-slate-400">Example: <code class="text-cyan-400">https://manganex-ai.onrender.com</code></p>
+            </div>
+            <div id="api-test-result" class="text-xs hidden p-2.5 rounded-lg font-medium"></div>
+            <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-800">
+                <button onclick="resetBackendUrl()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition">
+                    Reset
+                </button>
+                <button onclick="testAndSaveBackendUrl()" class="px-4 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs flex items-center space-x-1.5 shadow transition">
+                    <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                    <span>Test & Connect</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- App JavaScript with Cache Buster -->
+    <script src="./app.js?v=4.1.0"></script>
+</body>
+</html>
