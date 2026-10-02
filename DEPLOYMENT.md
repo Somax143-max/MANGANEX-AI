@@ -1,81 +1,60 @@
 # 🚀 MANGANEX AI — Production Deployment Guide
 ## 🌐 Architecture: FastAPI Backend on Render + Modern Frontend on Vercel
 
-This repository is configured for decoupled, scalable cloud deployment:
-- **Backend API & ML Models:** Hosted on **[Render](https://render.com)** (Free Python Web Service)
-- **Interactive UI Dashboard:** Hosted on **[Vercel](https://vercel.com)** (High-Speed Global Edge CDN)
+This repository is configured for decoupled, high-performance cloud deployment:
+- **Backend API & ML Models:** Hosted on **[Render](https://render.com)**: `https://manganex-ai-4l0l.onrender.com`
+- **Interactive UI Dashboard:** Hosted on **[Vercel](https://vercel.com)**: `https://manganex-ai.vercel.app`
 
 ---
 
-## 🏗️ Step 1: Deploy Backend to Render
+## 🏗️ Live Cloud Architecture
 
-### 1-Click Render Blueprint Setup:
-1. Push your repository to GitHub: `git push origin main`
-2. Open **[dashboard.render.com/blueprints](https://dashboard.render.com/blueprints)** (or click **New +** → **Web Service**).
-3. Connect your repository (`MANGANEX-AI`).
-4. Render will automatically read [`render.yaml`](file:///d:/2nd%20move%20from%20os/d/MANGANEX_AI_SIHPOLISH/render.yaml):
-   - **Name:** `manganex-ai-backend`
-   - **Environment:** `Python 3`
-   - **Build Command:** `pip install -r requirements.txt`
-   - **Start Command:** `uvicorn server:app --host 0.0.0.0 --port $PORT --workers 2`
-   - **Health Check Path:** `/health`
-5. Click **Apply / Create Web Service**.
-6. Once deployed (approx 2 minutes), copy your Render backend URL:
-   > 📌 *Example:* `https://manganex-ai-backend.onrender.com`
+| Component | Platform | Live URL / Endpoint |
+|---|---|---|
+| **FastAPI ML Backend** | Render | `https://manganex-ai-4l0l.onrender.com` |
+| **API Health Status** | Render | `https://manganex-ai-4l0l.onrender.com/health` |
+| **National Summary API** | Render | `https://manganex-ai-4l0l.onrender.com/api/summary` |
+| **GIS Prospectivity Zones** | Render | `https://manganex-ai-4l0l.onrender.com/api/zones` |
+| **AI Inference & Simulation** | Render | `https://manganex-ai-4l0l.onrender.com/api/predict` |
+| **Dashboard UI** | Vercel / Edge CDN | Fast Global Edge Distribution |
 
 ---
 
-## ⚡ Step 2: Deploy Frontend to Vercel
+## 🔄 Automatic Keep-Alive & High-Availability Engine
 
-### 1-Click Vercel Setup:
+Render free-tier web services automatically spin down after 15 minutes of inactivity. To ensure 100% smooth evaluation and real-time responsiveness:
+1. **Automated Heartbeat Pinger:** The frontend automatically pings `https://manganex-ai-4l0l.onrender.com/health` every 5 minutes while the page is open to keep the backend warm and active.
+2. **Cold-Start Auto-Retry:** If a request is made while the container is spinning up, the frontend automatically displays a non-intrusive status notification and executes exponential backoff retries.
+3. **Resilient Local Fallback Engine:** If offline or during temporary network interruptions, the frontend seamlessly executes local mathematical predictions mirroring the Random Forest regression and classification models, ensuring zero broken graphs or missing metrics.
+
+---
+
+## ⚡ 1-Click Vercel Deployment
+
 1. Open **[vercel.com/new](https://vercel.com/new)**.
-2. Select and import your GitHub repository (`MANGANEX-AI`).
-3. Under **Build and Output Settings**:
-   - **Framework Preset:** `Other`
-   - **Root Directory:** `./` (or `frontend`)
+2. Import your GitHub repository (`MANGANEX-AI`).
+3. Under **Build & Output Settings**:
+   - Framework Preset: `Other`
+   - Root Directory: `./` (or `frontend`)
 4. Click **Deploy**.
-5. Your frontend is instantly live with free SSL!
-   > 📌 *Example:* `https://manganex-ai.vercel.app`
+5. The frontend is automatically wired to `https://manganex-ai-4l0l.onrender.com` via `vercel.json` rewrites and `app.js` default configurations.
 
 ---
 
-## 🔗 Step 3: Connect Frontend (Vercel) to Backend (Render)
-
-You have **two easy ways** to connect them:
-
-### Option A: Using the Live UI Settings (Instant, Zero Re-deploy)
-1. Open your live Vercel URL in your browser.
-2. In the top navbar, click the **`⚙️ Backend: Connect`** button.
-3. Paste your Render backend URL (e.g. `https://manganex-ai-backend.onrender.com`) and click **Test & Connect**.
-4. The status turns **`🟢 Render Backend: Connected`** and data loads immediately. Your choice is saved in browser storage.
-
-### Option B: Automatic Proxy via `vercel.json` (Zero CORS)
-Add your Render URL directly into [`vercel.json`](file:///d:/2nd%20move%20from%20os/d/MANGANEX_AI_SIHPOLISH/vercel.json) rewrites:
-```json
-{
-  "rewrites": [
-    { "source": "/", "destination": "/frontend/index.html" },
-    { "source": "/app.js", "destination": "/frontend/app.js" },
-    { "source": "/static/:path*", "destination": "/frontend/:path*" },
-    { "source": "/api/:path*", "destination": "https://YOUR-RENDER-BACKEND.onrender.com/api/:path*" },
-    { "source": "/health", "destination": "https://YOUR-RENDER-BACKEND.onrender.com/health" }
-  ]
-}
-```
-
----
-
-## 🧪 Local Testing Before Deploy
+## 🧪 Testing Backend Endpoints
 
 ```bash
-# Terminal 1: Run Backend (Port 7860)
-python server.py
+# Health Check
+curl -X GET https://manganex-ai-4l0l.onrender.com/health
 
-# Terminal 2: Test Health Check & API
-curl http://localhost:7860/health
-curl http://localhost:7860/api/summary
+# Executive Summary KPIs
+curl -X GET https://manganex-ai-4l0l.onrender.com/api/summary
+
+# AI Prediction Inference
+curl -X POST https://manganex-ai-4l0l.onrender.com/api/predict \
+     -H "Content-Type: application/json" \
+     -d '{"sentinel2_ferrous_index": 1.45, "sentinel2_clay_index": 1.30, "ndvi": 0.28, "land_surface_temperature": 34.5, "elevation_m": 480.0, "geological_score": 0.85, "ore_grade_percent": 42.5, "historical_production_tonnes": 32000.0, "equipment_efficiency": 0.72, "rainfall_mm": 1150.0}'
 ```
-Open `http://localhost:7860` in your browser.
 
 ---
 

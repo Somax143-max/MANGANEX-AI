@@ -8,9 +8,10 @@
 
 ## 🚀 Live Demo & Deployment Status
 
+- **Live Backend API (Render):** [`https://manganex-ai-4l0l.onrender.com`](https://manganex-ai-4l0l.onrender.com)
+- **API Health Endpoint:** [`https://manganex-ai-4l0l.onrender.com/health`](https://manganex-ai-4l0l.onrender.com/health)
 - **Web Application:** FastAPI + HTML5/Tailwind/Leaflet/Chart.js Dashboard
 - **Production Port:** `7860` (or dynamic `$PORT`)
-- **API Health Endpoint:** `/health` & `/api/health`
 - **Deployment Guide:** Complete instructions for Vercel, Render, Railway, Hugging Face Spaces & Docker in [**`DEPLOYMENT.md`**](DEPLOYMENT.md)
 
 ---

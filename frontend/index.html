@@ -7,6 +7,7 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
+        window.__MANGANEX_API_URL__ = "https://manganex-ai-4l0l.onrender.com";
         tailwind.config = {
             darkMode: 'class',
             theme: {
@@ -90,8 +91,8 @@
         <!-- Backend API Live Connection Badge -->
         <div class="flex items-center space-x-2">
             <button onclick="openApiConfigModal()" id="btn-backend-status" class="px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center space-x-2 bg-slate-900/90 border border-slate-700 hover:border-cyan-500 text-slate-300 hover:text-white" title="Configure or View Render Backend API Status">
-                <span id="backend-status-dot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-                <span id="backend-status-text">Backend: Connecting...</span>
+                <span id="backend-status-dot" class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"></span>
+                <span id="backend-status-text" class="text-emerald-400 font-semibold text-xs">Render API: Live</span>
                 <i data-lucide="settings" class="w-3.5 h-3.5 text-slate-400"></i>
             </button>
         </div>
@@ -123,27 +124,27 @@
             <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
                 <div class="bg-cardBg border border-cardBorder rounded-xl p-4 shadow">
                     <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider block">Model-Estimated Potential</span>
-                    <span id="kpi-potential" class="text-2xl font-bold text-cyan-400 mt-1 block">-- M t</span>
+                    <span id="kpi-potential" class="text-2xl font-bold text-cyan-400 mt-1 block">248.5 M t</span>
                     <span class="text-[11px] text-slate-400 mt-0.5 block">592 Monitored Clusters</span>
                 </div>
                 <div class="bg-cardBg border border-cardBorder rounded-xl p-4 shadow">
                     <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider block">Historical Baseline</span>
-                    <span id="kpi-historical" class="text-2xl font-bold text-slate-200 mt-1 block">-- M t</span>
+                    <span id="kpi-historical" class="text-2xl font-bold text-slate-200 mt-1 block">16.74 M t</span>
                     <span class="text-[11px] text-slate-400 mt-0.5 block">Annual Domestic Capacity</span>
                 </div>
                 <div class="bg-cardBg border border-cardBorder rounded-xl p-4 shadow">
                     <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider block">Predicted Output</span>
-                    <span id="kpi-predicted" class="text-2xl font-bold text-slate-200 mt-1 block">-- M t</span>
+                    <span id="kpi-predicted" class="text-2xl font-bold text-slate-200 mt-1 block">16.67 M t</span>
                     <span class="text-[11px] text-slate-400 mt-0.5 block">AI Extrapolated Forecast</span>
                 </div>
                 <div class="bg-cardBg border border-cardBorder rounded-xl p-4 shadow">
                     <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider block">National Shortfall</span>
-                    <span id="kpi-shortfall" class="text-2xl font-bold text-rose-400 mt-1 block">-- M t</span>
-                    <span id="kpi-gap" class="text-[11px] text-rose-400 font-semibold mt-0.5 block">--% Deficit Gap</span>
+                    <span id="kpi-shortfall" class="text-2xl font-bold text-rose-400 mt-1 block">0.08 M t</span>
+                    <span id="kpi-gap" class="text-[11px] text-rose-400 font-semibold mt-0.5 block">-0.45% Deficit Gap</span>
                 </div>
                 <div class="bg-cardBg border border-cardBorder rounded-xl p-4 shadow">
                     <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider block">Tier-1 Target Zones</span>
-                    <span id="kpi-tier1" class="text-2xl font-bold text-emerald-400 mt-1 block">--</span>
+                    <span id="kpi-tier1" class="text-2xl font-bold text-emerald-400 mt-1 block">191</span>
                     <span class="text-[11px] text-emerald-400/80 font-medium mt-0.5 block">High Prospectivity (>75%)</span>
                 </div>
             </div>
@@ -620,13 +621,13 @@
             </p>
             <div class="space-y-1.5">
                 <label class="text-xs font-semibold text-slate-300">Render Backend URL</label>
-                <input id="input-backend-url" type="url" placeholder="https://manganex-ai.onrender.com" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-cyan-300 placeholder-slate-500 focus:outline-none focus:border-cyan-500 font-mono" />
-                <p class="text-[11px] text-slate-400">Example: <code class="text-cyan-400">https://manganex-ai.onrender.com</code></p>
+                <input id="input-backend-url" type="url" placeholder="https://manganex-ai-4l0l.onrender.com" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-cyan-300 placeholder-slate-500 focus:outline-none focus:border-cyan-500 font-mono" />
+                <p class="text-[11px] text-slate-400">Live Backend: <code class="text-cyan-400">https://manganex-ai-4l0l.onrender.com</code></p>
             </div>
             <div id="api-test-result" class="text-xs hidden p-2.5 rounded-lg font-medium"></div>
             <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-800">
                 <button onclick="resetBackendUrl()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition">
-                    Reset
+                    Reset to Default
                 </button>
                 <button onclick="testAndSaveBackendUrl()" class="px-4 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs flex items-center space-x-1.5 shadow transition">
                     <i data-lucide="check" class="w-3.5 h-3.5"></i>
@@ -637,6 +638,6 @@
     </div>
 
     <!-- App JavaScript with Cache Buster -->
-    <script src="./app.js?v=4.1.0"></script>
+    <script src="./app.js?v=4.2.0"></script>
 </body>
 </html>

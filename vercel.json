@@ -1,27 +1,44 @@
 {
   "version": 2,
-  "builds": [
+  "rewrites": [
     {
-      "src": "*",
-      "use": "@vercel/static"
+      "source": "/api/:path*",
+      "destination": "https://manganex-ai-4l0l.onrender.com/api/:path*"
     },
     {
-      "src": "frontend/*",
-      "use": "@vercel/static"
+      "source": "/health",
+      "destination": "https://manganex-ai-4l0l.onrender.com/health"
+    },
+    {
+      "source": "/app.js",
+      "destination": "/app.js"
+    },
+    {
+      "source": "/static/(.*)",
+      "destination": "/frontend/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ],
-  "routes": [
+  "headers": [
     {
-      "src": "/app.js",
-      "dest": "/app.js"
-    },
-    {
-      "src": "/static/(.*)",
-      "dest": "/frontend/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET,POST,PUT,DELETE,OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "*"
+        }
+      ]
     }
   ]
 }
